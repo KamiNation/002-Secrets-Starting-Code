@@ -3,6 +3,8 @@ const bodyParser = require("body-parser")
 const ejs = require("ejs")
 
 const mongoose = require("mongoose")
+const encrypt = require("mongoose-encryption")
+
 
 const app = express()
 
@@ -15,10 +17,15 @@ app.use(bodyParser.urlencoded({ extended: true }))
 mongoose.connect("mongodb://localhost:27017/userDB", { useNewUrlParser: true })
 
 // user schema
-const userSchema = {
+const userSchema = new mongoose.Schema({
     email: String,
     password: String
-}
+})
+
+const secret = "NX9yN3nOTkYwdGuvP8oexXRfsVnjUEevGIPmzs78Iwg="
+// this encrypts the password field in the db alone
+userSchema.plugin(encrypt, {secret: secret, encryptedField: ["password"]})
+
 
 // use userschema to setup new user model
 // the "User" in model is the collection name
