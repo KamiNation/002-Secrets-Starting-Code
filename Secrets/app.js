@@ -5,6 +5,7 @@ const ejs = require("ejs")
 const md5 = require("md5")
 const mongoose = require("mongoose")
 // const encrypt = require("mongoose-encryption")
+const bcrypt = require("bcrypt")
 
 
 const app = express()
@@ -47,16 +48,30 @@ app.get("/register", (req, res) => {
 
 app.post("/register", async (req, res) => {
 
+    const password = req.body.password
+    console.log(password);
+
+
     try {
+
+        const salt = await bcrypt.genSalt(5);  // Generate a salt
+        const hashedpassword = await bcrypt.hash(password, salt);  // Hash the password
+
+
+        console.log(hashedpassword);
+
+
         // create new user with model
         const newUser = new User({
             email: req.body.username,
-            password: md5(req.body.password)
+            password: hashedpassword
         })
 
         // save new user to db
-        await newUser.save()
+        newUser.save()
         res.render("secrets")
+
+
 
     } catch (error) {
         console.log(error);
@@ -70,7 +85,7 @@ app.post("/login", async (req, res) => {
     try {
         // check if user exist
         const username = req.body.username;
-        const password = md5(req.body.password)
+        const password = req.body.password
 
 
         const foundUser = await User.findOne({
@@ -79,11 +94,13 @@ app.post("/login", async (req, res) => {
 
         console.log(foundUser);
 
-        if (foundUser) {
-            foundUser.password === password
+        const passDB = await bcrypt.compare(password, foundUser.password);
+
+
+        if (foundUser && passDB) {
+            res.render("secrets")
         }
 
-        res.render("secrets")
 
 
     } catch (error) {
